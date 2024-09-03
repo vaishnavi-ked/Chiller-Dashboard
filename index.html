@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chiller Performance Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://localhost/file/dashboard/bootstrap/bootstrap-5.0.2-dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://localhost/file/dashboard/plugins/fontawesome-free/css/all.min.css" />
+  <!-- Ionicons -->
+  <link rel="stylesheet" href="https://localhost/file/dashboard/dist/ionicons-2.0.1/css/ionicons.min.css" />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+  <!--<link rel="stylesheet" href="style.css" />-->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Style for the card */
+    .card {
+      background-color: #ffffff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease-in-out;
+    }
+
+    .card:hover {
+      transform: scale(1.02);
+    }
+
+    /* Style for the card header */
+    .card-header {
+      background-color: #f7f7f7;
+      border-bottom: 1px solid #e0e0e0;
+      border-top-left-radius: 15px;
+      border-top-right-radius: 15px;
+      padding: 15px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    /* Style for the chart container */
+    .card-body {
+      padding: 20px;
+    }
+
+    /* Style for the canvas */
+    #scatterChart {
+      height: 300px;
+      max-width: 100%;
+    }
+
+    /* Responsive design for smaller screens */
+    @media (max-width: 768px) {
+      .card {
+        margin-bottom: 20px;
+      }
+
+      .card-header,
+      .card-body {
+        padding: 10px;
+      }
+
+      .card-title {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1 class="text-center mt-5">Chiller Performance Dashboard</h1>
+    <div class="row mt-4 pt-4">
+      <div class="col-md-6">
+        <select id="selectMonth" class="form-control">
+          <option value="">Select Month</option>
+          <option value="01">January</option>
+          <option value="02">February</option>
+          <option value="03">March</option>
+          <option value="04">April</option>
+          <option value="05">May</option>
+          <option value="06">June</option>
+          <option value="07">July</option>
+          <option value="08">August</option>
+          <option value="09">September</option>
+          <option value="10">October</option>
+          <option value="11">November</option>
+          <option value="12">December</option>
+        </select>
+      </div>
+      <div class="col-md-6">
+        <select id="selectChiller" class="form-control">
+          <option value="">Select Chiller</option>
+          <option value="C1">Chiller 1</option>
+          <option value="C2">Chiller 2</option>
+          <option value="C3">Chiller 3</option>
+          <option value="C4">Chiller 4</option>
+          <option value="C5">Chiller 5</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row mt-4 text-center">
+      <div class="col-lg-4 mb-3">
+        <div class="card bg-primary text-white">
+          <div class="card-body">
+            <h5 class="card-title">Operating Hours</h5>
+            <p class="card-text" id="operatingHours">0</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 mb-3">
+        <div class="card bg-success text-white">
+          <div class="card-body">
+            <h5 class="card-title">Average Load</h5>
+            <p class="card-text" id="averageFLA">0</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4 mb-3">
+        <div class="card bg-warning text-dark">
+          <div class="card-body">
+            <h5 class="card-title">Average Amps</h5>
+            <p class="card-text" id="averageAmps">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- Charts -->
+    <div class="row mt-4">
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header border-0">
+            <h5 class="card-title">
+              <i class="fa fa-chart-line"></i>
+              Delta T & Amps
+            </h5>
+          </div>
+          <div class="card-body">
+
+            <canvas id="scatterChart" style="
+                          height: 250px;
+                          max-width: 100%;
+                        "></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 mb-4">
+        <div class="card">
+          <div class="card-header border-0">
+            <h5 class="card-title">
+              <i class="fa fa-chart-bar"></i>
+              FLA & Amps
+            </h5>
+          </div>
+          <div class="card-body">
+            <canvas id="barChart" style="
+                          height: 250px;
+                          max-width: 100%;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--<div class="row mt-4 pt-4">-->
+    <!--    <div class="col-md-6">-->
+    <!--        <select id="selectTypeOfPump" class="form-control">-->
+    <!--            <option value="">select Type Of Pump</option>-->
+    <!--            <option value="01">PCHWP</option>-->
+    <!--            <option value="02">SCHWP</option>-->
+    <!--            <option value="03">CWP</option>-->
+    <!--            <option value="04">CoolingTower</option>-->
+    <!--        </select>-->
+    <!--    </div>-->
+    <!--    <div class="col-md-6">-->
+    <!--        <select id="selectPump" class="form-control">-->
+    <!--            <option value="">Select Pump</option>-->
+    <!--            <option value="C1">P1</option>-->
+    <!--            <option value="C2">P2</option>-->
+    <!--            <option value="C3">P3</option>-->
+    <!--            <option value="C4">P4</option>-->
+    <!--            <option value="C5">P5</option>-->
+    <!--            <option value="C1">FAN1</option>-->
+    <!--            <option value="C2">FAN2</option>-->
+    <!--            <option value="C3">FAN3</option>-->
+    <!--            <option value="C4">FAN4</option>-->
+    <!--            <option value="C5">FAN5</option>-->
+    <!--        </select>-->
+    <!--    </div>-->
+    <!--</div>-->
+    <div class="row mt-4">
+      <div class="col-lg-12 mb-4">
+        <div class="card">
+          <div class="card-header border-0 d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+              <i class="fa fa-dot-circle"></i> Power & Hz
+            </h5>
+            <div class="dropdown">
+              <button class="btn dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                Dropdown link
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                <li class="dropdown-item">P1</li>
+                <li class="dropdown-item">P2</li>
+                <li class="dropdown-item">P3</li>
+                <li class="dropdown-item">P4</li>
+                <li class="dropdown-item">P5</li>
+                <li class="dropdown-item">FAN1</li>
+                <li class="dropdown-item">FAN2</li>
+                <li class="dropdown-item">FAN3</li>
+                <li class="dropdown-item">FAN4</li>
+                <li class="dropdown-item">FAN5</li>
+              </ul>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="barChart2" style="height: 250px; max-width: 100%;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!--    <script src="https://localhost/file/dashboard/plugins/popper/popper.min.js"></script>-->
+
+  <!--<script src="https://localhost/file/dashboard/js/bootstrap.min.js"></script>-->
+  <script src="https://localhost/file/dashboard/js/chart.js"></script>
+  <script>
+    // Initialize Chart.js instance variables
+    let scatterChart;
+    let barChart;
+    let barChart2;
+    let scatterChartCon;
+
+    // Add event listeners to the dropdowns
+    document.getElementById('selectMonth').addEventListener('change', fetchAndUpdateCharts);
+    document.getElementById('selectChiller').addEventListener('change', fetchAndUpdateCharts);
+
+    async function fetchAndUpdateCharts() {
+      const selectedMonth = document.getElementById('selectMonth').value;
+      const selectedChiller = document.getElementById('selectChiller').value;
+
+      if (selectedMonth) {
+        const year = '2021'; // Specify the year or make it dynamic
+        const startDate = `${year}-${selectedMonth}-01`;
+        const endDate = new Date(year, parseInt(selectedMonth), 0).toISOString().split('T')[0]; // Get last day of the month
+
+        const urlHz = `https://localhost/obix/histories/SqlServerDatabase_Chiller/CWP_P1_HZ/~historyQuery?start=${startDate}T00:00:00.000+05:30&end=${endDate}T23:59:59.999+05:30`;
+        console.log("urlHz - "+urlHz);
+        const urlAmp = `https://localhost/obix/histories/SqlServerDatabase_Chiller/CWP_P1_AMPS/~historyQuery?start=${startDate}T00:00:00.000+05:30&end=${endDate}T23:59:59.999+05:30`;
+        const urlVolts = `https://localhost/obix/histories/SqlServerDatabase_Chiller/CWP_P1_VOLTS/~historyQuery?start=${startDate}T00:00:00.000+05:30&end=${endDate}T23:59:59.999+05:30`;
+
+        try {
+          const [responseHz, responseAmp, responseVolts] = await Promise.all([
+            fetch(urlHz),
+            fetch(urlAmp),
+            fetch(urlVolts)
+          ]);
+
+          if (!responseHz.ok || !responseAmp.ok || !responseVolts.ok) {
+            throw new Error('One or more network responses were not ok.');
+          }
+
+          const dataHz = await responseHz.text();
+          const dataAmp = await responseAmp.text();
+          const dataVolts = await responseVolts.text();
+
+          const parser = new DOMParser();
+          const xmlDocHz = parser.parseFromString(dataHz, "text/xml");
+          console.log("xml doc hz - "+xmlDocHz);
+          const xmlDocAmp = parser.parseFromString(dataAmp, "text/xml");
+          const xmlDocVolts = parser.parseFromString(dataVolts, "text/xml");
+
+          updateBarChart(xmlDocHz, xmlDocAmp);
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+
+        if (selectedChiller) {
+          const year = '2021'; // Specify the year or make it dynamic
+          const startDate = `${year}-${selectedMonth}-01`;
+
+          // Calculate the end date of the selected month
+          const endDate = new Date(year, parseInt(selectedMonth), 1).toISOString().split('T')[0]; // Changed to get the last day of the month
+          console.log("startDate: " + startDate);
+          console.log("endDate: " + endDate);
+
+          const urlAmps = `https://localhost/obix/histories/SqlServerDatabase_Chiller/${selectedChiller}_AMPS/~historyQuery?start=${startDate}T00:00:00.000+05:30&end=${endDate}T23:59:59.999+05:30`;
+          const urlRetTemp = `https://localhost/obix/histories/SqlServerDatabase_Chiller/${selectedChiller}_EVP_RET_TEMP/~historyQuery?start=${startDate}T00:00:00.000+05:30&end=${endDate}T23:59:59.999+05:30`;
+          const urlLeavTemp = `https://localhost/obix/histories/SqlServerDatabase_Chiller/${selectedChiller}_EVP_LEAV_TEMP/~historyQuery?start=${startDate}T00:00:00.000+05:30&end=${endDate}T23:59:59.999+05:30`;
+          const urlRetTempCon = `https://localhost/obix/histories/SqlServerDatabase_Chiller/${selectedChiller}_CON_RET_TEMP/~historyQuery?start=${startDate}T00:00:00.000+05:30&end=${endDate}T23:59:59.999+05:30`;
+          const urlLeavTempCon = `https://localhost/obix/histories/SqlServerDatabase_Chiller/${selectedChiller}_CON_LEAV_TEMP/~historyQuery?start=${startDate}T00:00:00.000+05:30&end=${endDate}T23:59:59.999+05:30`;
+          const urlFla = `https://localhost/obix/histories/SqlServerDatabase_Chiller/${selectedChiller}_FLA/~historyQuery?start=${startDate}T00:00:00.000+05:30&end=${endDate}T23:59:59.999+05:30`;
+
+          try {
+            const [responseAmps, responseRetTemp, responseLeavTemp, responseRetTempCon, responseLeavTempCon, responseFla] = await Promise.all([
+              fetch(urlAmps),
+              fetch(urlRetTemp),
+              fetch(urlLeavTemp),
+              fetch(urlRetTempCon),
+              fetch(urlLeavTempCon),
+              fetch(urlFla)
+            ]);
+
+            if (!responseAmps.ok || !responseRetTemp.ok || !responseLeavTemp.ok || !responseFla.ok) {
+              throw new Error('One or more network responses were not ok.');
+            }
+
+            const dataAmps = await responseAmps.text();
+            const dataRetTemp = await responseRetTemp.text();
+            const dataLeavTemp = await responseLeavTemp.text();
+            const dataRetTempCon = await responseRetTempCon.text();
+            const dataLeavTempCon = await responseLeavTempCon.text();
+            const dataFla = await responseFla.text();
+
+            const parser = new DOMParser();
+            const xmlDocAmps = parser.parseFromString(dataAmps, "text/xml");
+            const xmlDocRetTemp = parser.parseFromString(dataRetTemp, "text/xml");
+            const xmlDocLeavTemp = parser.parseFromString(dataLeavTemp, "text/xml");
+            const xmlDocRetTempCon = parser.parseFromString(dataRetTempCon, "text/xml");
+            const xmlDocLeavTempCon = parser.parseFromString(dataLeavTempCon, "text/xml");
+            const xmlDocFla = parser.parseFromString(dataFla, "text/xml");
+
+            // Process and update the charts with the new data
+            updateCharts(xmlDocAmps, xmlDocRetTemp, xmlDocLeavTemp, xmlDocRetTempCon, xmlDocLeavTempCon, xmlDocFla);
+          } catch (error) {
+            console.error('Error fetching data:', error);
+          }
+        } else {
+          clearCharts();
+        }
+
+      } else {
+        clearCharts();
+      }
+    }
+
+
+
+    function updateCharts(xmlDocAmps, xmlDocRetTemp, xmlDocLeavTemp, xmlDocRetTempCon, xmlDocLeavTempCon, xmlDocFla) {
+      const ampsValues = [];
+      const deltaTValues = [];
+      const deltaTValuesCon = [];
+      const flaValues = [];
+      const timestamps = [];
+      const labels = [];
+
+      const ampsRecords = xmlDocAmps.getElementsByTagName('obj');
+      console.log("amps record - "+ampsRecords);
+      const retTempRecords = xmlDocRetTemp.getElementsByTagName('obj');
+      const leavTempRecords = xmlDocLeavTemp.getElementsByTagName('obj');
+      const retTempConRecords = xmlDocRetTempCon.getElementsByTagName('obj');
+      const leavTempConRecords = xmlDocLeavTempCon.getElementsByTagName('obj');
+      const flaRecords = xmlDocFla.getElementsByTagName('obj');
+
+      for (let i = 0; i < ampsRecords.length; i++) {
+        const ampsValue = parseFloat(ampsRecords[i].getElementsByTagName('real')[0].getAttribute('val'));
+        const retTempValue = parseFloat(retTempRecords[i].getElementsByTagName('real')[0].getAttribute('val'));
+        const leavTempValue = parseFloat(leavTempRecords[i].getElementsByTagName('real')[0].getAttribute('val'));
+        const retTempConValue = parseFloat(retTempConRecords[i].getElementsByTagName('real')[0].getAttribute('val'));
+        const leavTempConValue = parseFloat(leavTempConRecords[i].getElementsByTagName('real')[0].getAttribute('val'));
+        const flaValue = parseFloat(flaRecords[i].getElementsByTagName('real')[0].getAttribute('val'));
+
+        const deltaT = retTempValue - leavTempValue;
+        const deltaTCon = retTempConValue - leavTempConValue;
+
+
+        if (isNaN(retTempValue) || isNaN(leavTempValue) || isNaN(ampsValue) || isNaN(flaValue)) continue;
+
+        if (ampsValue !== 0 && flaValue !== 0) {
+
+          ampsValues.push(ampsValue);
+
+          deltaTValues.push(deltaT);
+          deltaTValuesCon.push(deltaTCon);
+          flaValues.push(flaValue);
+          const timestamp = new Date(ampsRecords[i].getElementsByTagName('abstime')[0].getAttribute('val')).getTime();
+          timestamps.push(timestamp);
+        }
+      }
+      // console.log("amps"+ampsValues);
+      const formattedAmps = ampsValues.map(amps => amps.toFixed(2));
+      //     console.log("formatted - "+formattedAmps);
+      //     console.log("length - "+formattedAmps.length);
+      //     let temp = 0;   
+      //     for (let i = 0; i < formattedAmps.length; i++) {     
+      //     for (let j = i+1; j < formattedAmps.length; j++) {     
+      //       if(formattedAmps[i] > formattedAmps[j]) {    
+      //           temp = formattedAmps[i];    
+      //           formattedAmps[i] = formattedAmps[j];    
+      //           formattedAmps[j] = temp;    
+      //       }     
+      //     }     
+      // } 
+      // console.log("formatted new - "+formattedAmps);
+
+
+      // Calculate dynamic min and max values
+      const minAmps = Math.min(...ampsValues);
+      const maxAmps = Math.max(...ampsValues);
+
+      // Ensure the range is adjusted to cover all data points
+      const rangePadding = 10; // Adjust padding as needed
+      const minRange = Math.floor(minAmps - rangePadding);
+      const maxRange = Math.ceil(maxAmps + rangePadding);
+
+      let totalOperatingHours = 0;
+      for (let i = 1; i < timestamps.length; i++) {
+        const diffInHours = (timestamps[i] - timestamps[i - 1]) / (1000 * 60 * 60);
+        if (diffInHours <= 2) { // Assuming intervals of 2 hours for operating conditions
+          totalOperatingHours += diffInHours;
+        }
+      }
+      totalOperatingHours = totalOperatingHours.toFixed(2);
+
+      // Update KPI values
+      document.getElementById('averageFLA').innerText = flaValues.length > 0 ? flaValues.reduce((acc, val) => acc + val, 0).toFixed(2) : '0';
+      document.getElementById('averageAmps').innerText = ampsValues.length > 0 ? ampsValues.reduce((acc, val) => acc + val, 0).toFixed(2) : '0';
+      document.getElementById('operatingHours').innerText = totalOperatingHours;
+
+      // Update scatter chart for Delta T vs Amps
+      if (scatterChart) {
+        scatterChart.destroy();
+      }
+
+      const ctxScatterChart = document.getElementById('scatterChart').getContext('2d');
+      const formattedDeltaTValues = deltaTValues.map(deltaT => deltaT.toFixed(2));
+      const formattedDeltaTValuesCond = deltaTValuesCon.map(deltaTCon => deltaTCon.toFixed(2));
+      const xAxisLabels = [1, 1.5, 2, 2.5, 3, 3.5, 4];
+      scatterChart = new Chart(ctxScatterChart, {
+        type: 'line',
+        data: {
+          labels: formattedAmps, // This will be your x-axis labels
+          datasets: [
+            {
+              label: 'Amps for Delta T',
+              data: formattedDeltaTValues, // Data for the bars
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              borderColor: 'rgba(255, 99, 132, 1)',
+
+              borderWidth: 1,
+              pointStyle: false
+            },
+            {
+              label: 'Amps for Delta T Con',
+              data: formattedDeltaTValuesCond, // Data for the second line (same amps values)
+              backgroundColor: 'rgba(153, 102, 255, 0.6)', // Background color of the second line
+              borderColor: 'rgba(153, 102, 255, 1)', // Border color of the second line
+              borderWidth: 1,
+              pointStyle: false // Remove points from the second line
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Amps'
+              }
+
+              // ,
+              // ticks: {
+              //     callback: function (value) {
+              //         return value.toFixed(2);
+              //     }
+              // }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Delta T'
+              }
+
+              // ,
+              // min: minRange, // Set dynamic minimum value
+              //             max: maxRange, // Set dynamic maximum value
+              // ticks: {
+              //     callback: function (value) {
+              //         return value.toFixed(2);
+              //     }
+              // }
+            }
+          }
+        }
+      });
+
+      // if (scatterChartCon) {
+      //     scatterChartCon.destroy();
+      // }
+
+      // const ctxScatterChartCon = document.getElementById('scatterChartCon').getContext('2d');
+      // const formattedDeltaTValuesCon = deltaTValuesCon.map(deltaTCon => deltaTCon.toFixed(2));
+      // scatterChartCon = new Chart(ctxScatterChartCon, {
+      //     type: 'line',
+      //     data: {
+      //         labels: formattedAmps, // This will be your x-axis labels
+      //         datasets: [
+      //             {
+      //                 label: 'Amps for Delta T Con',
+      //                 data: formattedDeltaTValuesCon, // Data for the bars
+      //                 backgroundColor: 'rgba(75, 192, 192, 0.6)', // Color of the bars
+      //                 borderColor: 'rgba(75, 192, 192, 1)', // Border color of the bars
+      //                 borderWidth: 1,
+      //                 pointStyle: false
+      //             }
+      //         ]
+      //     },
+      //     options: {
+      //         responsive: true,
+      //         maintainAspectRatio: false,
+      //         scales: {
+      //             x: {
+      //                 title: {
+      //                     display: true,
+      //                     text: 'Amps'
+      //                 }
+      //                 // min: minRange, // Set dynamic minimum value
+      //                 //             max: maxRange, // Set dynamic maximum value
+      //                 // ticks: {
+      //                 //     callback: function (value) {
+      //                 //         return value.toFixed(2);
+      //                 //     }
+      //                 // }
+
+      //                 // ,
+      //                 // ticks: {
+      //                 //     callback: function (value) {
+      //                 //         return value.toFixed(2);
+      //                 //     }
+      //                 // }
+      //             },
+      //             y: {
+      //                 title: {
+      //                     display: true,
+      //                     text: 'Delta T Con'
+      //                 }
+      //             }
+      //         }
+      //     }
+      // });
+
+      // Update horizontal bar chart for FLA vs Amps
+      if (barChart) {
+        barChart.destroy();
+      }
+
+      const ctxBarChart = document.getElementById('barChart').getContext('2d');
+      barChart = new Chart(ctxBarChart, {
+        type: 'bar',
+        data: {
+          labels: flaValues.map(fla => `${fla.toFixed(1)}`), // Display FLA values as labels
+          datasets: [
+            {
+              label: 'Amps',
+              data: formattedAmps,
+              backgroundColor: 'rgba(54, 162, 235, 0.2)', // New background color
+              borderColor: 'rgba(54, 162, 235, 1)', // New border color
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: 'x', // This makes the chart vertical
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'FLA'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Amps'
+              }
+              // ,
+              // min: minRange, // Set dynamic minimum value
+              // max: maxRange, // Set dynamic maximum value
+              // ticks: {
+              //     callback: function (value) {
+              //         // Display the actual value of Amps on the Y-axis
+              //         return value.toFixed(2);
+              //     }
+              // }
+            }
+          }
+        }
+      });
+    }
+
+    function updateBarChart(xmlDocHz, xmlDocAmp) {
+      
+      const hzValues = [];
+      const ampsValues = [];
+      const labels = [];
+
+      const hzRecords = xmlDocHz.getElementsByTagName('obj');
+      console.log("hzRecords - "+hzRecords);
+      const ampsRecords = xmlDocAmp.getElementsByTagName('obj');
+      console.log("ampsRecords - "+ampsRecords);
+
+      // Assuming the records are in order and you want to plot the first five
+      for (let i = 0; i < hzRecords.length; i++) {
+        const hzValue = parseFloat(hzRecords[i].getElementsByTagName('real')[0].getAttribute('val'));
+        console.log("hz values - "+hzValues);
+        const ampsValue = parseFloat(ampsRecords[i].getElementsByTagName('real')[0].getAttribute('val'));
+        console.log("amps values - "+ampsValues);
+
+        if(hzValue !== 0 && ampsValue !== 0)
+        {
+          // Push the values to their respective arrays
+        hzValues.push(hzValue);
+        console.log("hz values - "+ hzValues);
+        ampsValues.push(ampsValue);
+        console.log("amps values - "+ ampsValues);
+        }
+      }
+
+      // Destroy the existing chart if it exists
+      if (barChart2) {
+        barChart2.destroy();
+      }
+
+      // Create a new bar chart instance
+      const ctxBarChart = document.getElementById('barChart2').getContext('2d');
+    barChart2 = new Chart(ctxBarChart, {
+     type: 'bar',
+        data: {
+          labels: ampsValues.map(amps => amps.toFixed(2)), 
+          datasets: [
+            {
+              label: 'Amps',
+              data: hzValues,
+              backgroundColor: 'rgba(54, 162, 235, 0.2)', // New background color
+              borderColor: 'rgba(54, 162, 235, 1)', // New border color
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: 'x', // This makes the chart vertical
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'hz'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Amps'
+              }
+              // ,
+              // min: minRange, // Set dynamic minimum value
+              // max: maxRange, // Set dynamic maximum value
+              // ticks: {
+              //     callback: function (value) {
+              //         // Display the actual value of Amps on the Y-axis
+              //         return value.toFixed(2);
+              //     }
+              // }
+            }
+          }
+        }
+      });
+}
+
+
+
+    function clearCharts() {
+      document.getElementById('averageFLA').innerText = '0';
+      document.getElementById('averageAmps').innerText = '0';
+      document.getElementById('operatingHours').innerText = '0';
+
+
+      if (scatterChart) {
+        scatterChart.destroy();
+      }
+      if (barChart) {
+        barChart.destroy();
+      }
+      if (barChart2) {
+        barChart2.destroy();
+      }
+      if (scatterChartCon) {
+        scatterChartCon.destroy();
+      }
+    }
+
+    // Initial chart load
+    fetchAndUpdateCharts();
+  </script>
+</body>
+
+</html>
